@@ -336,16 +336,20 @@ export default function Home() {
           </button>
 
           <button
-            onMouseDown={() => setIsComparing(true)}
-            onMouseUp={() => setIsComparing(false)}
-            onMouseLeave={() => setIsComparing(false)}
+            onClick={() => setIsComparing(prev => !prev)}
             disabled={!isStreaming}
-            className="px-6 py-3 bg-transparent text-cyberpunk-pink font-semibold rounded border border-cyberpunk-pink
-                       hover:bg-cyberpunk-pink hover:text-black transition disabled:opacity-50 disabled:cursor-not-allowed
-                       flex items-center gap-2"
+            className={`px-6 py-3 font-semibold rounded border transition
+                        flex items-center gap-2
+                        ${
+                          isComparing
+                            ? 'bg-cyberpunk-pink text-black border-cyberpunk-pink shadow-neon'
+                            : 'bg-transparent text-cyberpunk-pink border-cyberpunk-pink hover:bg-cyberpunk-pink hover:text-black'
+                        }
+                        disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            <span>↔</span> COMPARE
+            <span>↔</span> {isComparing ? 'EXIT COMPARE' : 'COMPARE'}
           </button>
+                        
         </div>
 
         {/* Stats Panel */}
