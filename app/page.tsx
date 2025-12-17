@@ -25,7 +25,6 @@ export default function Home() {
   });
   const [error, setError] = useState<string | null>(null);
   
-  const streamingRef = useRef(false);
   const frameCountRef = useRef(0);
   const lastStatsTimeRef = useRef(Date.now());
 
@@ -45,13 +44,9 @@ export default function Home() {
 
     const connectWebSocket = () => {
       try {
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
-
-        if (!wsUrl) {
-          setError('WebSocket URL not configured');
-          return;
-        }
-
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/enhance`;
+        
         ws = new WebSocket(wsUrl);
         
         ws.onopen = () => {
@@ -110,19 +105,14 @@ export default function Home() {
           setIsConnected(false);
         };
         
-        ws.onclose = (event) => {
-          console.log('WebSocket closed:', event.code);
-
+        ws.onclose = () => {
+          console.log('WebSocket disconnected');
           setIsConnected(false);
           setIsStreaming(false);
-
-          // Only reconnect on abnormal close
-          if (event.code !== 1000) {
-            if (reconnectTimeout) clearTimeout(reconnectTimeout);
-            reconnectTimeout = setTimeout(connectWebSocket, 3000);
-          }
+          // Attempt reconnection after 3 seconds
+          if (reconnectTimeout) clearTimeout(reconnectTimeout);
+          reconnectTimeout = setTimeout(connectWebSocket, 3000);
         };
-
         
         wsRef.current = ws;
       } catch (e) {
@@ -162,7 +152,6 @@ export default function Home() {
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play();
           setIsStreaming(true);
-          streamingRef.current = true;
           startFrameCapture();
         };
       }
@@ -174,14 +163,11 @@ export default function Home() {
   };
 
   const stopCamera = () => {
-    streamingRef.current = false;
-
     if (videoRef.current?.srcObject) {
       (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
     }
     setIsStreaming(false);
   };
-
 
   const startFrameCapture = () => {
     const video = videoRef.current;
@@ -207,20 +193,10 @@ export default function Home() {
 
     let frameSkip = 0;
     const FRAME_SKIP_RATE = 0; // 0 = every frame, 1 = every other frame, etc
-    const TARGET_FPS = 30;
-  const FRAME_INTERVAL = 1000 / TARGET_FPS;
-  let lastFrameTime = 0;
 
     const captureFrame = () => {
       // Check if we're still streaming
-      if (
-        !streamingRef.current ||
-        !videoRef.current ||
-        videoRef.current.paused ||
-        videoRef.current.ended
-      ) {
-        return;
-      }
+      if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
       
       const ctx = hiddenCanvas.getContext('2d');
       const displayCtx = displayCanvas.getContext('2d');
@@ -239,13 +215,6 @@ export default function Home() {
         }
         frameSkip = 0;
 
-        const now = performance.now();
-        if (now - lastFrameTime < FRAME_INTERVAL) {
-          requestAnimationFrame(captureFrame);
-          return;
-        }
-        lastFrameTime = now;
-
         // Draw video frame to hidden canvas (scaled down)
         ctx.drawImage(video, 0, 0, CAPTURE_WIDTH, CAPTURE_HEIGHT);
         
@@ -259,12 +228,11 @@ export default function Home() {
         }
         
         // Get image data as base64 JPEG with low quality
-        const ws = wsRef.current;
-
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          const imageData = hiddenCanvas.toDataURL('image/jpeg', JPEG_QUALITY);
-
-          ws.send(JSON.stringify({
+        const imageData = hiddenCanvas.toDataURL('image/jpeg', JPEG_QUALITY);
+        
+        // Send to server if WebSocket is open
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
             type: 'frame',
             image: imageData
           }));
