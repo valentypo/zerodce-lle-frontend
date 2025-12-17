@@ -44,9 +44,13 @@ export default function Home() {
 
     const connectWebSocket = () => {
       try {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/enhance`;
-        
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
+
+        if (!wsUrl) {
+          setError('WebSocket URL not configured');
+          return;
+        }
+
         ws = new WebSocket(wsUrl);
         
         ws.onopen = () => {
