@@ -45,7 +45,7 @@ export default function Home() {
     const connectWebSocket = () => {
       try {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/enhance`;
+        const wsUrl = `${protocol}//${window.location.hostname}:31387/ws/enhance`;
         
         ws = new WebSocket(wsUrl);
         
