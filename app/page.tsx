@@ -46,10 +46,10 @@ export default function Home() {
       try {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         
-        const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/enhance`;
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:8000/ws/enhance`;
         
-        console.log('Connecting to:', wsUrl);
         ws = new WebSocket(wsUrl);
+        console.log('Connecting to:', wsUrl);
         
         ws.onopen = () => {
           console.log('✓ Connected to Zero-DCE server');
