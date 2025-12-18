@@ -44,18 +44,9 @@ export default function Home() {
 
     const connectWebSocket = () => {
       try {
-        const rawUrl = process.env.NEXT_PUBLIC_WS_URL;
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         
-        if (!rawUrl) {
-          setError("WebSocket URL not configured in environment variables.");
-          return;
-        }
-
-        // Since Vercel is HTTPS, browsers require WSS (Secure WebSockets).
-        // HOWEVER, if your IP (171.250.15.13) doesn't have an SSL certificate, 
-        // WSS will fail. You might have to force WS for an IP-based backend.
-        
-        const wsUrl = `ws://${rawUrl.replace(/^wss?:\/\//, '')}`;
+        const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/enhance`;
         
         console.log('Connecting to:', wsUrl);
         ws = new WebSocket(wsUrl);
